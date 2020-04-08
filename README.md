@@ -1,2 +1,3 @@
 # dota2_framework
-My simple framework.
+write in your addon 
+`require('includes/init')`
