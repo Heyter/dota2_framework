@@ -119,21 +119,3 @@ function error_with_traceback(msg, bError)
 	long_error(bError, msg..'\n')
 	print_traceback()
 end
-
-if not gamemode then
-	gamemode = {}
-	gamemode.object = nil
-end
-
---[[---------------------------------------------------------
-	Name: gamemode.Register(object)
-	Desc: Used to register your gamemode
------------------------------------------------------------]]
-
-function gamemode.Register(object)
-	gamemode.object = object
-end
-
-function gamemode.Get()
-	return gamemode.object
-end

@@ -18,3 +18,13 @@ function table.IsEmpty(tab)
 	if not istable(tab) then return false end
 	return next(tab) == nil
 end
+
+--[[---------------------------------------------------------
+	Name: table.Count( table )
+	Desc: Returns the number of keys in a table
+-----------------------------------------------------------]]
+function table.Count( t )
+	local i = 0
+	for k in pairs( t ) do i = i + 1 end
+	return i
+end

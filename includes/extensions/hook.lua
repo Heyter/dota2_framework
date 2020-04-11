@@ -10,7 +10,6 @@ local Hooks = {}
 -----------------------------------------------------------]]
 function hook.GetTable() return Hooks end
 
-
 --[[---------------------------------------------------------
     Name: Add
     Args: string hookName, any identifier, function func
@@ -23,8 +22,9 @@ function hook.Add( event_name, name, func )
 	if (Hooks[ event_name ] == nil) then
 		Hooks[ event_name ] = {}
 	end
-
-	Hooks[ event_name ][ name ] = func
+	
+	Hooks[ event_name ][ name ] = {CustomGameEventManager:RegisterListener(event_name, func), func}
+	GameRules.custom_hooks = Hooks
 end
 
 
@@ -36,17 +36,12 @@ end
 function hook.Remove( event_name, name )
 	if ( not isstring( event_name ) ) then return end
 	if ( not Hooks[ event_name ] ) then return end
-
+	
+	local id = Hooks[ event_name ][ name ]
 	Hooks[ event_name ][ name ] = nil
-end
-
---[[---------------------------------------------------------
-    Name: Run
-    Args: string hookName, vararg args
-    Desc: Calls hooks associated with the hook name.
------------------------------------------------------------]]
-function hook.Run( name, ... )
-	return hook.Call( name, gamemode and gamemode.Get() or nil, ... )
+	
+	CustomGameEventManager:UnregisterListener(id)
+	id = nil
 end
 
 --[[---------------------------------------------------------
@@ -54,7 +49,7 @@ end
     Args: string hookName, table gamemodeTable, vararg args
     Desc: Calls hooks associated with the hook name.
 -----------------------------------------------------------]]
-function hook.Call( name, gm, ... )
+function hook.Run( name, ... )
 
 	--
 	-- Run hooks
@@ -71,24 +66,20 @@ function hook.Call( name, gm, ... )
 				--
 				-- If it's a string, it's cool
 				--
-				a, b, c, d, e, f = v( ... )
+				a, b, c, d, e, f = v[2]( ... )
 
 			else
-
-				--
-				-- If the key isn't a string - we assume it to be an entity
-				-- Or panel, or something else that IsValid works on.
-				--
-				if ( k ) then
+				if ( IsValid(k) ) then
 					--
 					-- If the object is valid - pass it as the first argument (self)
 					--
-					a, b, c, d, e, f = v( k, ... )
+					a, b, c, d, e, f = v[2]( k, ... )
 				else
 					--
 					-- If the object has become invalid - remove it
 					--
 					HookTable[ k ] = nil
+					CustomGameEventManager:UnregisterListener(v[1])
 				end
 			end
 
@@ -98,18 +89,29 @@ function hook.Call( name, gm, ... )
 			if ( a ~= nil ) then
 				return a, b, c, d, e, f
 			end
-				
+		end
+	end      
+end
+
+function hook.RemoveAll()
+	if table.IsEmpty(GameRules.custom_hooks) then return end
+	
+	for k, data in pairs(GameRules.custom_hooks or {}) do
+		for k2, v in pairs(data) do
+			if v[1] then
+				CustomGameEventManager:UnregisterListener(v[1])
+			end
 		end
 	end
 	
-	--
-	-- Call the gamemode function
-	--
-	if ( not gm ) then return end
-	
-	local GamemodeFunction = gm[ name ]
-	if ( GamemodeFunction == nil ) then return end
-			
-	return GamemodeFunction( gm, ... )        
-	
+	GameRules.custom_hooks = nil
+end
+
+function hook.Init()
+	hook.RemoveAll()
+end
+
+if hook.Init then
+	hook.Init()
+	hook.Init = nil
 end
